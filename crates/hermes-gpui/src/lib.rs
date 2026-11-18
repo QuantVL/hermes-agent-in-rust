@@ -1,7 +1,19 @@
-//! GPUI 0.2.2 vertical-slice spike support types.
+//! GPUI 0.2.2 app skeleton (theme, window kinds, state, shell) plus the
+//! original vertical-slice spike proof types from Task 1.
 //!
-//! The companion integration test (`tests/spike.rs`) drives these types
-//! through a window, a text render, an action, and a tokio network bridge.
+//! `tests/spike.rs` still drives `SpikeView` through a window, a text render,
+//! an action and a tokio bridge. `tests/theme.rs` pins the app-skeleton
+//! interfaces consumed by later UI tasks.
+
+pub mod app;
+pub mod state;
+pub mod theme;
+pub mod window;
+
+pub use app::run;
+pub use state::GlobalState;
+pub use theme::{ColorTokens, FontTokens, Rgba, Theme};
+pub use window::WindowType;
 
 /// Root view for the spike window.
 ///

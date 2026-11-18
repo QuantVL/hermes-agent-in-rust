@@ -8,6 +8,8 @@ repository = { workspace = true }
 description = "GPUI 0.2.2 vertical-slice spike for Hermes Agent (Rust)"
 
 [dependencies]
+hermes-core = { path = "../hermes-core" }
+hermes-gateway = { path = "../hermes-gateway" }
 gpui = { workspace = true, features = ["test-support"] }
 tokio = { workspace = true }
 reqwest = { workspace = true }

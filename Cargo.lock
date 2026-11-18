@@ -2492,6 +2492,8 @@ name = "hermes-gpui"
 version = "0.1.0"
 dependencies = [
  "gpui",
+ "hermes-core",
+ "hermes-gateway",
  "libc",
  "mio",
  "reqwest",
