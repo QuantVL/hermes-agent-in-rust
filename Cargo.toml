@@ -5,6 +5,7 @@ members = [
     "crates/hermes-gateway",
     "crates/hermes-gpui",
     "crates/hermes-chat",
+    "crates/hermes-shell",
 ]
 
 [workspace.package]

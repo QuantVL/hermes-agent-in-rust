@@ -1,0 +1,16 @@
+[package]
+name = "hermes-shell"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+description = "Application shell, settings and plugin host API for Hermes Agent (Rust)"
+
+[dependencies]
+hermes-core = { path = "../hermes-core" }
+hermes-chat = { path = "../hermes-chat" }
+hermes-gateway = { path = "../hermes-gateway" }
+hermes-gpui = { path = "../hermes-gpui" }
+gpui = { workspace = true }
+serde_json = { workspace = true }
