@@ -5,13 +5,15 @@
 //! binary on PATH. The control-socket tests are `#[cfg(unix)]`: CI is ubuntu and
 //! `control.rs` exposes a cfg-gated `unsupported` stub on Windows.
 
+#[cfg(unix)]
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use hermes_gateway::{
-    join_api_origin, parse_ensure_response, validate_ticket_token, ErrorCode, GatewayClient,
-    GatewayEndpoint, GatewayError, GatewayEvent, TicketPurpose,
+    join_api_origin, parse_ensure_response, validate_ticket_token, ErrorCode, GatewayError,
 };
+#[cfg(unix)]
+use hermes_gateway::{GatewayClient, GatewayEndpoint, GatewayEvent, TicketPurpose};
 use serde_json::{json, Value};
 
 #[cfg(unix)]
@@ -84,7 +86,7 @@ fn spawn_mock_control(
     let listener = UnixListener::bind(&socket_path).expect("bind control socket");
     let requests = Arc::new(Mutex::new(Vec::new()));
     let requests_c = requests.clone();
-    let queue: VecDeque<String> = tickets.iter().map(|t| (*t).to_string()).collect();
+    let mut queue: VecDeque<String> = tickets.iter().map(|t| (*t).to_string()).collect();
 
     std::thread::spawn(move || {
         for stream in listener.incoming() {
@@ -112,7 +114,7 @@ fn spawn_mock_control(
                 "instance_id": "instance-a",
                 "runtime_protocol": 1
             });
-            let _ = writeln!(stream, "{}", response);
+            let _ = writeln!(stream, "{response}");
             let _ = stream.flush();
         }
     });
@@ -155,15 +157,15 @@ fn spawn_mock_http(requests: usize) -> (String, Arc<Mutex<Vec<Vec<(String, Strin
             seen_c.lock().unwrap().push(headers);
             let body = "{}";
             let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                body.len(), body
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
             );
             let _ = stream.write_all(response.as_bytes());
             let _ = stream.flush();
         }
     });
 
-    (format!("http://127.0.0.1:{}", port), seen)
+    (format!("http://127.0.0.1:{port}"), seen)
 }
 
 #[cfg(unix)]
@@ -453,7 +455,7 @@ async fn ws_connect_uses_both_subprotocols_and_parses_message_delta() {
     });
 
     let (dir, _requests) = spawn_mock_control(&["wsticket-1"], false);
-    let base = format!("http://127.0.0.1:{}", port);
+    let base = format!("http://127.0.0.1:{port}");
     let endpoint = ready_endpoint(&base, dir.path());
     let client = GatewayClient::new(&endpoint).unwrap();
     let mut stream = client.ws_connect().unwrap();
@@ -495,7 +497,7 @@ async fn ws_connect_rejects_invalid_ticket_charset_before_dialing() {
     });
 
     let (dir, _requests) = spawn_mock_control(&["bad==ticket"], false);
-    let base = format!("http://127.0.0.1:{}", port);
+    let base = format!("http://127.0.0.1:{port}");
     let endpoint = ready_endpoint(&base, dir.path());
     let client = GatewayClient::new(&endpoint).unwrap();
 
