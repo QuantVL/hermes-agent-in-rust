@@ -67,6 +67,7 @@ fn gpui_022_window_text_action_and_tokio_bridge() {
     let (obs_tx, obs_rx) = std_mpsc::channel::<Observation>();
 
     let window: WindowHandle<SpikeView> = cx.add_window(|_window, _cx| SpikeView::new("spike"));
+    let view_entity = window.root(&mut cx).expect("root view");
 
     let _notify_subscription = window
         .update(&mut cx, |_view, _window, cx| {
@@ -109,8 +110,10 @@ fn gpui_022_window_text_action_and_tokio_bridge() {
     // 5. Dispatch one GPUI action ------------------------------------------
     cx.update(|app| {
         app.on_action(move |_: &SpikeAction, app| {
-            window
-                .update(app, |view, _window, cx| {
+            // Use the entity handle directly: `window.update` here would be
+            // re-entrant with the in-progress action dispatch.
+            view_entity
+                .update(app, |view, cx| {
                     view.action_count += 1;
                     cx.notify();
                 })
