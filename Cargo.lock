@@ -2471,6 +2471,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-gateway"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "hermes-core",
+ "libc",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
+]
+
+[[package]]
 name = "hermes-gpui"
 version = "0.1.0"
 dependencies = [

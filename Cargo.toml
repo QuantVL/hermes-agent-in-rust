@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/hermes-core", "crates/hermes-gpui"]
+members = ["crates/hermes-core", "crates/hermes-gateway", "crates/hermes-gpui"]
 
 [workspace.package]
 version = "0.1.0"
