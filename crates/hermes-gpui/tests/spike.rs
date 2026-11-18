@@ -112,12 +112,10 @@ fn gpui_022_window_text_action_and_tokio_bridge() {
         app.on_action(move |_: &SpikeAction, app| {
             // Use the entity handle directly: `window.update` here would be
             // re-entrant with the in-progress action dispatch.
-            view_entity
-                .update(app, |view, cx| {
-                    view.action_count += 1;
-                    cx.notify();
-                })
-                .expect("handle dispatched action");
+            view_entity.update(app, |view, cx| {
+                view.action_count += 1;
+                cx.notify();
+            });
         });
     });
     window
