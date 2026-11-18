@@ -93,10 +93,9 @@ fn gpui_022_window_text_action_and_tokio_bridge() {
     });
 
     // 4. A GPUI task receives from that channel and calls cx.notify() ------
-    let bridge_window = window.clone();
     let _bridge = cx.spawn(move |mut async_cx| async move {
         let body = net_rx.recv().await.expect("tokio bridge channel closed");
-        bridge_window
+        window
             .update(&mut async_cx, |view, _window, cx| {
                 view.received = Some(body);
                 cx.notify();
@@ -108,10 +107,9 @@ fn gpui_022_window_text_action_and_tokio_bridge() {
     cx.executor().allow_parking();
 
     // 5. Dispatch one GPUI action ------------------------------------------
-    let action_window = window.clone();
     cx.update(|app| {
         app.on_action(move |_: &SpikeAction, app| {
-            action_window
+            window
                 .update(app, |view, _window, cx| {
                     view.action_count += 1;
                     cx.notify();
