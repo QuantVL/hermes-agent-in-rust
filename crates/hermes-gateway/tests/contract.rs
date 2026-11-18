@@ -71,6 +71,9 @@ fn envelope(endpoint: Value, state: &str) -> String {
     .to_string()
 }
 
+#[cfg(unix)]
+type HeaderPairs = Vec<(String, String)>;
+
 /// Spawn a mock control socket that replies to `session-ticket` frames.
 /// Returns the temp dir (socket lives at `<dir>/control.sock`) and the list of
 /// decoded request frames it received.
@@ -124,7 +127,7 @@ fn spawn_mock_control(
 
 /// Minimal raw HTTP/1.1 server; records lower-cased header pairs per request.
 #[cfg(unix)]
-fn spawn_mock_http(requests: usize) -> (String, Arc<Mutex<Vec<Vec<(String, String)>>>>) {
+fn spawn_mock_http(requests: usize) -> (String, Arc<Mutex<Vec<HeaderPairs>>>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind http");
     let port = listener.local_addr().unwrap().port();
     let seen = Arc::new(Mutex::new(Vec::new()));
@@ -421,6 +424,9 @@ fn rest_get_sends_fresh_ticket_and_no_origin_header() {
 
 #[cfg(unix)]
 #[tokio::test]
+// The tungstenite handshake callback must return Result<Response, ErrorResponse>
+// and ErrorResponse is a 136-byte http::Response; we cannot shrink that API.
+#[allow(clippy::result_large_err)]
 async fn ws_connect_uses_both_subprotocols_and_parses_message_delta() {
     use futures::{SinkExt, StreamExt};
     use tokio::net::TcpListener as TokioTcpListener;
@@ -440,6 +446,13 @@ async fn ws_connect_uses_both_subprotocols_and_parses_message_delta() {
                 .get("sec-websocket-protocol")
                 .and_then(|v| v.to_str().ok())
                 .map(str::to_string);
+            // tungstenite rejects a handshake where the client asked for
+            // subprotocols but the server selected none — echo the base one.
+            let mut resp = resp;
+            resp.headers_mut().insert(
+                "sec-websocket-protocol",
+                tokio_tungstenite::tungstenite::http::HeaderValue::from_static("hermes-gateway-v1"),
+            );
             Ok(resp)
         };
         let mut ws = tokio_tungstenite::accept_hdr_async(stream, callback)
