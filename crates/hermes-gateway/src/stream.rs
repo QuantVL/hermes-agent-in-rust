@@ -132,6 +132,7 @@ fn extract(value: &Value, data: Option<&Value>, keys: &[&str]) -> Option<String>
 }
 
 /// A stream of typed [`GatewayEvent`]s from a connected gateway WS.
+#[derive(Debug)]
 pub struct WsStream {
     rx: tokio::sync::mpsc::Receiver<GatewayEvent>,
 }
