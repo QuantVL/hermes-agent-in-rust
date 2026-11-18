@@ -10,7 +10,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use hermes_gateway::{
-    join_api_origin, parse_ensure_response, validate_ticket_token, ErrorCode, GatewayError,
+    join_api_origin, parse_ensure_response, validate_ticket_token, verdict_from_exit_and_line,
+    ErrorCode, GatewayError,
 };
 #[cfg(unix)]
 use hermes_gateway::{GatewayClient, GatewayEndpoint, GatewayEvent, TicketPurpose};
@@ -213,6 +214,37 @@ fn origin_accepts_single_slash_path() {
     assert_eq!(url, "http://127.0.0.1:1234/api/status");
 }
 
+#[test]
+fn origin_accepts_loopback_ipv4_and_localhost() {
+    assert_eq!(
+        join_api_origin("http://127.0.0.1:1234", "/api/status").unwrap(),
+        "http://127.0.0.1:1234/api/status"
+    );
+    assert_eq!(
+        join_api_origin("http://localhost:1234", "/api/status").unwrap(),
+        "http://localhost:1234/api/status"
+    );
+    assert_eq!(
+        join_api_origin("http://LOCALHOST:1234", "/api/status").unwrap(),
+        "http://localhost:1234/api/status"
+    );
+    assert_eq!(
+        join_api_origin("http://127.42.7.9:1234", "/api/status").unwrap(),
+        "http://127.42.7.9:1234/api/status"
+    );
+}
+
+#[test]
+fn origin_rejects_non_loopback_domain_and_ip() {
+    for base in ["http://evil.com:1234", "http://192.168.1.10:1234"] {
+        let err = join_api_origin(base, "/api/status").unwrap_err();
+        assert!(
+            matches!(err, GatewayError::InvalidOrigin(_)),
+            "{base} should be rejected: {err:?}"
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------
 // 2. Discovery validation (pure validator used by `discover`)
 // ---------------------------------------------------------------------------
@@ -253,6 +285,31 @@ fn discovery_rejects_api_origin_with_path() {
     endpoint["api_origin"] = json!("http://127.0.0.1:1234/extra");
     let err = parse_ensure_response(&envelope(endpoint, "ready")).unwrap_err();
     assert!(matches!(err, GatewayError::InvalidOrigin(_)), "{err:?}");
+}
+
+#[test]
+fn discovery_rejects_non_loopback_api_origin() {
+    let mut endpoint = base_endpoint_value();
+    endpoint["api_origin"] = json!("http://evil.com:1234");
+    let err = parse_ensure_response(&envelope(endpoint, "ready")).unwrap_err();
+    assert!(matches!(err, GatewayError::InvalidOrigin(_)), "{err:?}");
+}
+
+#[test]
+fn discover_maps_nonzero_exit_before_parsing_stdout() {
+    let err =
+        verdict_from_exit_and_line(4, Some("not json {{{"), "authorization denied").unwrap_err();
+    assert!(
+        matches!(
+            err,
+            GatewayError::ExitCode {
+                code: 4,
+                error_code: Some(ErrorCode::Authorization),
+                ..
+            }
+        ),
+        "{err:?}"
+    );
 }
 
 #[test]

@@ -15,8 +15,8 @@ pub mod ticket;
 
 pub use control::{control_socket_path, CONTROL_SOCKET_NAME, CONTROL_TIMEOUT};
 pub use discovery::{
-    discover, parse_ensure_response, GatewayEndpoint, REQUIRED_CAPABILITY,
-    SUPPORTED_RUNTIME_PROTOCOL,
+    discover, parse_ensure_response, verdict_from_exit_and_line, GatewayEndpoint,
+    REQUIRED_CAPABILITY, SUPPORTED_RUNTIME_PROTOCOL,
 };
 pub use error::{ErrorCode, GatewayError, Result};
 pub use origin::{join_api_origin, validate_bare_origin};

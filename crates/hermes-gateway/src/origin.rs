@@ -22,7 +22,32 @@ pub fn validate_bare_origin(base: &str) -> Result<()> {
             "base must be a bare http(s) origin with an explicit port and no path/query/userinfo: {base:?}"
         )));
     }
+
+    let host = url
+        .host_str()
+        .ok_or_else(|| GatewayError::InvalidOrigin(format!("base origin has no host: {base:?}")))?;
+    if !is_loopback_host(host) {
+        return Err(GatewayError::InvalidOrigin(format!(
+            "api_origin host must be loopback (127.0.0.0/8, ::1 or localhost), got {host:?}"
+        )));
+    }
+
     Ok(())
+}
+
+/// Loopback hosts a gateway may advertise: `127.0.0.0/8`, `::1` and
+/// `localhost` (case-insensitive). All other hosts are rejected.
+fn is_loopback_host(host: &str) -> bool {
+    if host.eq_ignore_ascii_case("localhost") {
+        return true;
+    }
+    // `Url::host_str()` brackets IPv6 literals, e.g. "[::1]".
+    let address = host.trim_start_matches('[').trim_end_matches(']');
+    match address.parse::<std::net::IpAddr>() {
+        Ok(std::net::IpAddr::V4(ip)) => ip.octets()[0] == 127,
+        Ok(std::net::IpAddr::V6(ip)) => ip == std::net::Ipv6Addr::LOCALHOST,
+        Err(_) => false,
+    }
 }
 
 /// Join `path` onto a bare loopback `base`, rejecting all four cross-origin

@@ -102,6 +102,39 @@ pub fn parse_ensure_response(line: &str) -> Result<GatewayEndpoint> {
     Ok(endpoint)
 }
 
+/// Decide the outcome of `gateway ensure` from its process verdict.
+///
+/// The exit code is authoritative: a non-zero exit always maps to an
+/// `ExitCode` error with its documented `ErrorCode`, regardless of whether
+/// stdout happened to contain a parseable JSON line. Only a zero exit proceeds
+/// to parse the endpoint. This keeps a failed `ensure` with non-JSON stdout
+/// from being misreported as a parse error.
+pub fn verdict_from_exit_and_line(
+    exit_code: i32,
+    stdout_line: Option<&str>,
+    stderr: &str,
+) -> Result<GatewayEndpoint> {
+    if exit_code != 0 {
+        let message = if !stderr.trim().is_empty() {
+            stderr.trim().to_string()
+        } else {
+            stdout_line.unwrap_or("").trim().to_string()
+        };
+        return Err(GatewayError::ExitCode {
+            code: exit_code,
+            error_code: ErrorCode::from_exit_code(exit_code),
+            message,
+        });
+    }
+
+    match stdout_line {
+        Some(line) if !line.trim().is_empty() => parse_ensure_response(line.trim()),
+        _ => Err(GatewayError::Discovery(
+            "`gateway ensure --json` produced no JSON line on stdout".into(),
+        )),
+    }
+}
+
 /// Spawn `hermes --profile <profile> gateway ensure --json` and return the
 /// validated endpoint.
 ///
@@ -118,28 +151,7 @@ pub fn discover(profile: &str) -> Result<GatewayEndpoint> {
         })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    if let Some(line) = stdout.lines().find(|line| !line.trim().is_empty()) {
-        let endpoint = parse_ensure_response(line.trim())?;
-        if !output.status.success() {
-            return Err(GatewayError::ExitCode {
-                code: output.status.code().unwrap_or(-1),
-                error_code: output.status.code().and_then(ErrorCode::from_exit_code),
-                message: String::from_utf8_lossy(&output.stderr).trim().to_string(),
-            });
-        }
-        return Ok(endpoint);
-    }
-
-    if output.status.success() {
-        return Err(GatewayError::Discovery(
-            "`gateway ensure --json` produced no JSON line on stdout".into(),
-        ));
-    }
-
-    let code = output.status.code().unwrap_or(-1);
-    Err(GatewayError::ExitCode {
-        code,
-        error_code: ErrorCode::from_exit_code(code),
-        message: String::from_utf8_lossy(&output.stderr).trim().to_string(),
-    })
+    let line = stdout.lines().find(|line| !line.trim().is_empty());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    verdict_from_exit_and_line(output.status.code().unwrap_or(-1), line, &stderr)
 }
