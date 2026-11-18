@@ -7,6 +7,7 @@ members = [
     "crates/hermes-chat",
     "crates/hermes-shell",
     "crates/hermes-hud",
+    "crates/hermes-overlay",
 ]
 
 [workspace.package]
