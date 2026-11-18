@@ -12,6 +12,9 @@ gpui = { workspace = true, features = ["test-support"] }
 tokio = { workspace = true }
 reqwest = { workspace = true }
 tokio-tungstenite = { workspace = true }
+# Pin the transitive xattr/libc/mio stack (see root Cargo.toml comment).
+libc = { workspace = true }
+mio = { workspace = true }
 
 [dev-dependencies]
 # `io-util` is only needed by the in-test mock HTTP server; the workspace

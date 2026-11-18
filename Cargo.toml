@@ -25,6 +25,12 @@ gpui = "=0.2.2"
 tokio = { version = "1", features = ["rt-multi-thread","net","macros","time","sync"] }
 reqwest = { version = "0.12", default-features = false, features = ["json","rustls-tls"] }
 tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+# Transitive compatibility pins (crates.io only):
+# gpui 0.2.2 -> gpui_http_client -> zed-async-tar 0.5.0-zed -> xattr 0.2.3,
+# and xattr 0.2.3 uses `libc::ENOATTR`, which libc removed in 0.2.190.
+# mio 1.2.1+ requires libc >= 0.2.190, so mio must be pinned alongside libc.
+libc = "=0.2.189"
+mio = "=1.2.0"
 
 [workspace.metadata.cargo-dist]
 targets = [
