@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = ["crates/hermes-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["QuantVL"]
+repository = "https://github.com/QuantVL/hermes-agent-in-rust"
+description = "Hermes Agent rewritten in Rust"
+
+[workspace.dependencies]
+# Core — pinned to versions verified to exist on crates.io (2026-11)
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.145"
+serde_yaml = "0.9.34"
+thiserror = "1.0.69"
+anyhow = "1.0.100"
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+dirs = "5.0.1"
+tracing = "0.1.41"
+
+[workspace.metadata.cargo-dist]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
+installers = ["tarball"]
+ci = "github"
+publish = "github-releases"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"
