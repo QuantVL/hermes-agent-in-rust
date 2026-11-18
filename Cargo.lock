@@ -2512,18 +2512,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hermes-shell"
-version = "0.1.0"
-dependencies = [
- "gpui",
- "hermes-chat",
- "hermes-core",
- "hermes-gateway",
- "hermes-gpui",
- "serde_json",
-]
-
-[[package]]
 name = "hermes-hud"
 version = "0.1.0"
 dependencies = [
@@ -2541,6 +2529,18 @@ version = "0.1.0"
 dependencies = [
  "hermes-chat",
  "hermes-core",
+ "hermes-gpui",
+ "serde_json",
+]
+
+[[package]]
+name = "hermes-shell"
+version = "0.1.0"
+dependencies = [
+ "gpui",
+ "hermes-chat",
+ "hermes-core",
+ "hermes-gateway",
  "hermes-gpui",
  "serde_json",
 ]
