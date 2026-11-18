@@ -7,6 +7,7 @@
 
 use hermes_chat::{Composer, SessionInfo};
 use hermes_core::Config;
+use hermes_gateway::GatewayEvent;
 use hermes_gpui::WindowType;
 use hermes_hud::{HudComposer, HudWindow, SessionSwitcher, SESSION_ACTIVATE_METHOD};
 use serde_json::json;
@@ -94,4 +95,28 @@ fn hud_composer_submit_delegates_to_composer() {
     assert_eq!(via_hud.method, "prompt.submit");
     assert_eq!(via_hud.method, via_composer.method);
     assert_eq!(via_hud.params, via_composer.params);
+}
+
+#[test]
+fn hud_tracks_gateway_connection_status_without_a_client() {
+    let mut hud = HudWindow::default();
+    assert!(!hud.connected, "HUD starts disconnected");
+
+    hud.on_gateway_event(GatewayEvent::Connected);
+    assert!(hud.connected);
+
+    hud.on_gateway_event(GatewayEvent::Disconnected(None));
+    assert!(!hud.connected);
+}
+
+#[test]
+fn switcher_can_select_a_known_session_by_id() {
+    let mut switcher = SessionSwitcher::from_sessions(vec![session("sess-1"), session("sess-2")]);
+    let req = switcher
+        .select_by_id("sess-2")
+        .expect("known session is selectable");
+
+    assert_eq!(req.method, "session.activate");
+    assert_eq!(switcher.selected_id(), Some("sess-2"));
+    assert!(switcher.select_by_id("missing").is_none());
 }
