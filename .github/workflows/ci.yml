@@ -22,6 +22,18 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      # GPUI 0.2.2's default features (x11 + wayland + font-kit) and its
+      # `test-support` feature pull in xkbcommon/wayland/fontconfig bindings.
+      # These need the corresponding dev headers at compile time on ubuntu.
+      - name: Install GPUI Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            libfontconfig1-dev
+
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
 
