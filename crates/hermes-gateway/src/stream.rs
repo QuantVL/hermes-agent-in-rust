@@ -162,17 +162,24 @@ impl GatewayClient {
             .replacen("https://", "wss://", 1)
             .replacen("http://", "ws://", 1);
         let ws_url = format!("{}/api/ws", ws_origin.trim_end_matches('/'));
-        let request = tokio_tungstenite::tungstenite::http::Request::builder()
-            .uri(ws_url)
-            .header(
-                "Sec-WebSocket-Protocol",
-                format!(
-                    "hermes-gateway-v1, hermes-gateway-ticket.{}",
-                    ticket.as_str()
-                ),
-            )
-            .body(())
-            .map_err(|e| GatewayError::InvalidState(format!("invalid WS request: {e}")))?;
+        // Go through IntoClientRequest so tungstenite generates the mandatory
+        // handshake headers (Upgrade, Connection, Sec-WebSocket-Key, ...); a
+        // hand-built http::Request would be rejected by the server.
+        use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+        let mut request = ws_url
+            .as_str()
+            .into_client_request()
+            .map_err(|e| GatewayError::InvalidState(format!("invalid WS URL: {e}")))?;
+        let protocols = format!(
+            "hermes-gateway-v1, hermes-gateway-ticket.{}",
+            ticket.as_str()
+        );
+        let protocol_header =
+            tokio_tungstenite::tungstenite::http::HeaderValue::from_str(&protocols)
+                .map_err(|e| GatewayError::InvalidState(format!("invalid WS header: {e}")))?;
+        request
+            .headers_mut()
+            .insert("sec-websocket-protocol", protocol_header);
 
         let (tx, rx) = tokio::sync::mpsc::channel::<GatewayEvent>(64);
         let _ = std::thread::spawn(move || {
