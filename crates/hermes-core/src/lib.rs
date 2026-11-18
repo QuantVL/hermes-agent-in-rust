@@ -2,6 +2,7 @@
 
 pub mod config;
 pub mod error;
+pub mod plugin;
 pub mod protocol;
 
 pub use config::{
@@ -9,6 +10,7 @@ pub use config::{
     ThemeMode, ToolsConfig,
 };
 pub use error::{HermesError, Result};
+pub use plugin::PluginManifest;
 pub use protocol::{JsonRpcError, MessageId, Notification, Request, Response};
 
 /// JSON-RPC protocol version implemented by this crate.
